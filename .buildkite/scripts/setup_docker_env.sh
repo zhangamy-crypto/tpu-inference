@@ -19,6 +19,7 @@ set -euo pipefail
 
 setup_environment() {
   local image_name_param=${1:-"vllm-tpu"}
+  local should_push=${2:-"false"}
   IMAGE_NAME="$image_name_param"
 
   local DOCKERFILE_NAME="Dockerfile"
@@ -81,9 +82,24 @@ setup_environment() {
       TPU_INFERENCE_HASH="$BUILDKITE_COMMIT"
   fi
 
+
+  VLLM_COMMIT_HASH=42d5d705f93b254179e062003e8504fbe04f1b30
+
+
+  # Build with specific hash and 'latest' tag for convenience
   docker build \
       --build-arg VLLM_COMMIT_HASH="${VLLM_COMMIT_HASH}" \
       --build-arg IS_FOR_V7X="${IS_FOR_V7X:-false}" \
       --build-arg IS_TEST="true" \
-      --no-cache -f docker/"${DOCKERFILE_NAME}" -t "${IMAGE_NAME}:${TPU_INFERENCE_HASH}" .
+      --no-cache -f docker/"${DOCKERFILE_NAME}" \
+      -t "${IMAGE_NAME}:${TPU_INFERENCE_HASH}" \
+      -t "${IMAGE_NAME}:latest" .
+
+  # Push logic if requested
+  if [[ "$should_push" == "true" ]]; then
+    echo "--- Pushing Docker image(s) to registry..."
+    gcloud auth configure-docker us-central1-docker.pkg.dev
+    docker push "${IMAGE_NAME}:${TPU_INFERENCE_HASH}"
+    docker push "${IMAGE_NAME}:latest"
+  fi
 }
