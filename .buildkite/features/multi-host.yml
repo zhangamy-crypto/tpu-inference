@@ -22,8 +22,11 @@ steps:
       queue: tpu_v6e_queue
     env:
       IS_FOR_V7X: "${IS_FOR_V7X}"
+      HEAD_SSH_IP: ""
+      HEAD_INTERNAL_IP: ""
+      WORKER_SSH_IPS: ""
     commands:
-      - echo "placeholder"  # TODO : replace with your correctness test command
+      - .buildkite/scripts/run_multihost.sh "python3 /workspace/tpu_inference/scripts/vllm/benchmarking/benchmark_serving.py --backend vllm --model ${TEST_MODEL:-meta-llama/Llama-2-7b-hf} || echo 'Performance script failed'"
   - label: "${TPU_VERSION:-tpu6e} Record correctness test result for multi-host"
     key: "${TPU_VERSION:-tpu6e}_record_multi-host_CorrectnessTest"
     depends_on: "${TPU_VERSION:-tpu6e}_multi-host_CorrectnessTest"
@@ -47,7 +50,7 @@ steps:
     env:
       IS_FOR_V7X: "${IS_FOR_V7X}"
     commands:
-      - echo "placeholder"  # TODO : replace with your performance test command
+      - buildkite-agent meta-data set "${TPU_VERSION:-tpu6e}_multi-host_PerformanceTest" "unverified"
   - label: "${TPU_VERSION:-tpu6e} Record performance test result for multi-host"
     key: "${TPU_VERSION:-tpu6e}_record_multi-host_PerformanceTest"
     depends_on: "${TPU_VERSION:-tpu6e}_multi-host_PerformanceTest"
