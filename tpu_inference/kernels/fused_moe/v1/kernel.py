@@ -21,6 +21,7 @@ from jax import lax
 from jax._src import dtypes
 from jax.experimental import pallas as pl
 from jax.experimental.pallas import tpu as pltpu
+from vllm.model_executor.layers.fused_moe.activation import MoEActivation
 
 from tpu_inference.kernels.fused_moe.v1.tuned_block_sizes import \
     get_tuned_block_sizes
@@ -76,11 +77,11 @@ def swigluoai(gate: jax.Array,
 
 
 def apply_act_fn(acc1, acc3, act_fn):
-    if act_fn == "silu":
+    if act_fn == MoEActivation.SILU:
         return jax.nn.silu(acc1) * acc3
-    elif act_fn == "gelu":
+    elif act_fn == MoEActivation.GELU:
         return jax.nn.gelu(acc1) * acc3
-    elif act_fn == "swigluoai":
+    elif act_fn == MoEActivation.SWIGLUOAI:
         return swigluoai(acc1, acc3)
     else:
         raise NotImplementedError(f"Unsupported activation function: {act_fn}")
